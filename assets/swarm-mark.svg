@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" fill="none" aria-label="swarm mark">
+  <g transform="translate(20 20)" fill="#0F172A">
+    <circle cx="60" cy="-12" r="3" opacity="0.35"/>
+    <circle cx="122" cy="24" r="3" opacity="0.35"/>
+    <circle cx="122" cy="96" r="3" opacity="0.35"/>
+    <circle cx="60" cy="132" r="3" opacity="0.35"/>
+    <circle cx="-2" cy="96" r="3" opacity="0.35"/>
+    <circle cx="-2" cy="24" r="3" opacity="0.35"/>
+
+    <circle cx="60" cy="24" r="6"/>
+    <circle cx="91" cy="42" r="6"/>
+    <circle cx="91" cy="78" r="6"/>
+    <circle cx="60" cy="96" r="6"/>
+    <circle cx="29" cy="78" r="6"/>
+    <circle cx="29" cy="42" r="6"/>
+
+    <circle cx="60" cy="60" r="9"/>
+  </g>
+</svg>

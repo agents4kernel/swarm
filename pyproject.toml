@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "swarm"
+version = "0.0.0"
+description = "LLM authored kernels at inference time, specialised per workload, per device, per request."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "swarm contributors" }]
+
+dependencies = [
+  # core LLM client. swap as needed.
+  "anthropic>=0.40",
+  # workload tracing + tensors
+  "torch>=2.5",
+  # cache + persistence
+  "lmdb>=1.4",
+  # logging
+  "structlog>=24",
+]
+
+[project.optional-dependencies]
+nvidia  = ["triton>=3.0", "cuda-python"]
+amd     = ["triton>=3.0"]   # ROCm builds
+apple   = ["mlx>=0.20"]
+dev     = ["pytest", "ruff", "black", "mypy"]
+bench   = ["torch>=2.5", "transformers", "vllm"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swarm"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

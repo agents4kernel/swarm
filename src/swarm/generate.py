@@ -38,7 +38,7 @@ import time
 import traceback
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Protocol
 
 import torch
 import torch.nn.functional as F
@@ -48,6 +48,9 @@ try:
     from anthropic import Anthropic
 except ImportError:
     Anthropic = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:
+    from swarm.council import CouncilConfig
 
 
 # =============================================================================
@@ -279,11 +282,11 @@ class LLMClient:
         self.max_tokens = max_tokens
         self.temperature = temperature
 
-    def complete(self, system: str, user: str) -> str:
+    def complete(self, system: str, user: str, temperature: float | None = None) -> str:
         resp = self.client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,
-            temperature=self.temperature,
+            temperature=self.temperature if temperature is None else temperature,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
@@ -414,9 +417,15 @@ class KernelBackend(Protocol):
 class TritonBackend:
     name = "triton"
 
-    def __init__(self, llm: LLMClient | None = None, cache: KernelCache | None = None) -> None:
+    def __init__(
+        self,
+        llm: LLMClient | None = None,
+        cache: KernelCache | None = None,
+        council: "CouncilConfig | None" = None,
+    ) -> None:
         self.llm = llm or LLMClient()
         self.cache = cache or KernelCache()
+        self.council = council
 
     def synthesise(
         self,
@@ -426,6 +435,12 @@ class TritonBackend:
         example_inputs: tuple[torch.Tensor, ...],
         max_attempts: int = 4,
     ) -> tuple[Callable[..., torch.Tensor], VerifyResult, str]:
+        if self.council is not None:
+            from swarm.council import CouncilBackend
+
+            return CouncilBackend(self.llm, self.cache, self.council).synthesise(
+                sig, reference, reference_source, example_inputs, max_attempts
+            )
         cached = self.cache.get(sig)
         if cached:
             ns = _compile_module(cached["source"])

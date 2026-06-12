@@ -59,10 +59,16 @@ class TensorSpec:
     shape: tuple[int, ...]
     dtype: str
     device: str
+    layout: str
 
     @classmethod
     def of(cls, t: torch.Tensor) -> "TensorSpec":
-        return cls(tuple(t.shape), str(t.dtype).removeprefix("torch."), t.device.type)
+        st = t.stride()
+        sz = tuple(t.shape)
+        order = tuple(sorted(range(t.dim()), key=lambda d: (st[d] == 0, -st[d], -sz[d])))
+        bcast = tuple(int(st[d] == 0) for d in range(t.dim()))
+        layout = f"{order}:{bcast}:{int(t.is_contiguous())}"
+        return cls(sz, str(t.dtype).removeprefix("torch."), t.device.type, layout)
 
 
 @dataclass(frozen=True)
@@ -215,7 +221,7 @@ def build_prompt(
         if name in EXEMPLARS
     )
     inputs_block = "\n".join(
-        f"  arg{i}: shape={spec.shape} dtype={spec.dtype} device={spec.device}"
+        f"  arg{i}: shape={spec.shape} dtype={spec.dtype} device={spec.device} layout={spec.layout}"
         for i, spec in enumerate(sig.inputs)
     )
     retry_block = ""

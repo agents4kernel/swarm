@@ -335,14 +335,19 @@ def _cuda_time_ms(fn: Callable[[], Any], iters: int = 50, warmup: int = 10) -> f
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
-    start.record()
-    for _ in range(iters):
+    props = torch.cuda.get_device_properties(torch.cuda.current_device())
+    l2_bytes = getattr(props, "L2_cache_size", 0) or (64 << 20)
+    flush = torch.empty(int(l2_bytes), dtype=torch.int8, device="cuda")
+    starts = [torch.cuda.Event(enable_timing=True) for _ in range(iters)]
+    ends = [torch.cuda.Event(enable_timing=True) for _ in range(iters)]
+    for i in range(iters):
+        flush.zero_()
+        starts[i].record()
         fn()
-    end.record()
+        ends[i].record()
     torch.cuda.synchronize()
-    return start.elapsed_time(end) / iters
+    samples = sorted(s.elapsed_time(e) for s, e in zip(starts, ends))
+    return samples[len(samples) // 2]
 
 
 def verify(
